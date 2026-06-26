@@ -1,0 +1,11 @@
+flowchart TD
+  Start(["Início"]) --> PlayerInit["playerInit(isOdd, hash, msg.value >= bidMin)"]
+  PlayerInit -->|"antes de accept"| WaitAccept["Esperando acceptGame"]
+  WaitAccept -->|"player1 quitGame()"| Quit["quitGame -> paga player1 (menos comissão) -> owner recebe resto -> reset"]
+  WaitAccept -->|"player2 aceita"| Accept["acceptGame(optionP2, msg.value == bidMin) -> owner recebe comissão imediata"]
+  Accept --> RevealWindow["player1 deve revelar antes de timeOutP2"]
+  RevealWindow -->|"player1 chama resultGame(key, optionP1)"| Verify["Verifica hash && parity && optionP1>-1"]
+  Verify -->|"sucesso"| PayP1["paga todo saldo a player1 -> reset"]
+  Verify -->|"falha"| PayP2["paga todo saldo a player2 -> reset"]
+  RevealWindow -->|"timeout"| Claim["claimGame() -> paga player2 -> reset"]
+  Start -->|"owner/admin"| SetParams["setBid / setComission (owner only, sem jogo em progresso)"]

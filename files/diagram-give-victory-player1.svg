@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700">
+  <style>
+    .box { fill:#f7f9fc; stroke:#2b6cb0; stroke-width:2; rx:8; }
+    .title { font: 600 20px 'Arial'; fill:#0b2f5a; }
+    .label { font: 14px 'Arial'; fill:#0b2f5a; }
+    .step { font: 700 14px 'Arial'; fill:#2b6cb0; }
+    .assert { font: 14px 'Arial'; fill:#2b6cb0; }
+    .arrow { stroke:#2b6cb0; stroke-width:2; fill:none; marker-end:url(#arrowhead); }
+  </style>
+
+  <!-- Arrow head definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2b6cb0" />
+    </marker>
+  </defs>
+
+  <text x="40" y="40" class="title">Fluxo do teste: "give victory to Player 1" (PT-BR)</text>
+
+  <!-- Player1 box -->
+  <rect x="40" y="80" width="220" height="80" class="box" />
+  <text x="60" y="110" class="step">PASSO 1</text>
+  <text x="60" y="132" class="label">Player1.playerInit(hashOptionP1, aposta)</text>
+  <text x="60" y="152" class="label">Contrato guarda hash, bidMin, nLockTime</text>
+
+  <!-- Contract box -->
+  <rect x="320" y="80" width="260" height="80" class="box" />
+  <text x="340" y="110" class="label">Contrato OddOrEven</text>
+  <text x="340" y="132" class="label">gameData.hashOptionP1, bidMin, nLockTime</text>
+
+  <!-- Arrow Player1 -> Contract -->
+  <path d="M260 120 L320 120" class="arrow" />
+
+  <!-- EVM time advance box -->
+  <rect x="620" y="80" width="220" height="80" class="box" />
+  <text x="640" y="110" class="step">PASSO 2</text>
+  <text x="640" y="132" class="label">evm_setNextBlockTimestamp(nLockTime+1)</text>
+  <text x="640" y="152" class="label">evm_mine()</text>
+
+  <!-- Arrow Contract -> EVM -->
+  <path d="M580 120 L620 120" class="arrow" />
+
+  <!-- Player2 box -->
+  <rect x="40" y="220" width="220" height="80" class="box" />
+  <text x="60" y="250" class="step">PASSO 3</text>
+  <text x="60" y="272" class="label">Player2.acceptGame(optionP2, aposta)</text>
+  <text x="60" y="292" class="label">Contrato grava optionP2, player2</text>
+
+  <!-- Arrow EVM -> Player2 (down) -->
+  <path d="M730 160 L730 220 L260 220" class="arrow" />
+
+  <!-- Arrow Player2 -> Contract -->
+  <path d="M260 260 L320 260" class="arrow" />
+  <path d="M320 260 L320 160" class="arrow" />
+
+  <!-- Balances before box -->
+  <rect x="320" y="220" width="260" height="80" class="box" />
+  <text x="340" y="250" class="step">PASSO 4</text>
+  <text x="340" y="272" class="label">Registrar saldos: p1, p2, contrato</text>
+
+  <!-- Arrow Contract -> Balances -->
+  <path d="M460 160 L460 220" class="arrow" />
+
+  <!-- Player1 result box -->
+  <rect x="620" y="220" width="220" height="80" class="box" />
+  <text x="640" y="250" class="step">PASSO 5</text>
+  <text x="640" y="272" class="label">Player1.resultGame(keygame, optionP1)</text>
+  <text x="640" y="292" class="label">Contrato verifica hash + paridade</text>
+
+  <!-- Arrow Balances -> Player1.resultGame (to the right) -->
+  <path d="M580 260 L620 260" class="arrow" />
+
+  <!-- Contract transfer arrow to Player1 (winner) -->
+  <path d="M580 260 L540 320 L460 320" class="arrow" />
+  <rect x="360" y="320" width="200" height="60" class="box" />
+  <text x="380" y="350" class="label">Transfer para vencedor</text>
+  <text x="380" y="370" class="label">(contract.balance -> Player1 ou Player2)</text>
+
+  <!-- Balances after box -->
+  <rect x="620" y="340" width="400" height="120" class="box" />
+  <text x="640" y="370" class="step">RESULTADO</text>
+  <text x="640" y="392" class="label">Imprimir saldos após resultado</text>
+  <text x="640" y="412" class="label">Variação p1, variação p2 (wei e ETH)</text>
+  <text x="640" y="432" class="label">Imprimir VENCEDOR: Jogador 1 / 2 / Empate</text>
+
+  <!-- Assertions box -->
+  <rect x="40" y="480" width="980" height="140" class="box" />
+  <text x="60" y="510" class="assert">Asserções principais (test):</text>
+  <text x="80" y="540" class="label">- balanceP1_after &gt; balanceP1_before</text>
+  <text x="80" y="566" class="label">- balanceP2_after == balanceP2_before</text>
+  <text x="80" y="592" class="label">- lastGameRecord.keyGame == keygame</text>
+
+  <!-- Footer / note -->
+  <text x="40" y="660" class="label">Observação: PASSO 2 avança timestamp do próximo bloco (evm_setNextBlockTimestamp + evm_mine) para satisfazer require(block.timestamp &gt; nLockTime).</text>
+
+</svg>

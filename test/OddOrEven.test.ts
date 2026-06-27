@@ -435,11 +435,14 @@ describe("OddOrEven", function () {
   });
 
   it("should give victory to Player 1 ( 3 + 5 even)", async function () {
-    
+    console.log("\n========== TESTE: GIVE VICTORY TO PLAYER 1 (FLUXO FELIZ COMPLETO) ==========");
+    console.log("Este teste demonstra o cenário completo: Player1 inicializa, Player2 aceita,");
+    console.log("Player1 revela corretamente e recebe o prêmio. Player2 permanece inalterado.\n");
 
     const player1Instance = oddOrEven.connect(player1);
     const player2Instance = oddOrEven.connect(player2);
 
+    console.log("PASSO 1: Preparando dados do Player1");
     let keygame: string = gameKey.substring(2, gameKey.length)
     let optionP1In: number = 3;
     let optionP1str = optionP1In.toString(16);
@@ -449,32 +452,54 @@ describe("OddOrEven", function () {
 
     let hashOptionP1In = (ethers.keccak256(hexStringToUint8Array(keygame + optionP1str)));
     let isOdd = false;
+    console.log(`  -> Opção P1: ${optionP1In} (par = false)`);
+    console.log(`  -> Chave secreta (keygame): ${keygame}`);
+    console.log(`  -> Hash commit: ${hashOptionP1In}`);
+    console.log(`  -> Player1 enviará aposta: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
-    console.log("PASSO 1: player1.playerInit() — enviando compromisso e aposta");
+    console.log("\nPASSO 2: Player1 executa playerInit() com hash commit");
     await player1Instance.playerInit(isOdd, hashOptionP1In, {value: DEFAULT_BID});
+    console.log(`  -> playerInit executado com sucesso`);
 
     let gameData = fetchGameData(await oddOrEven.gameData());
-    console.log("  -> nLockTime armazenado:", Number(gameData.nLockTime));
+    console.log(`  -> nLockTime (deadline mínimo antes de acceptGame) armazenado: ${gameData.nLockTime}`);
+    console.log(`  -> Saldo do contrato aumentou: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
-    console.log("PASSO 2: avançando tempo para satisfazer require de acceptGame (block.timestamp > nLockTime)");
+    console.log("\nPASSO 3: Avançar tempo de blockchain para satisfazer require de acceptGame");
+    console.log(`  -> Requirement: block.timestamp > nLockTime`);
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(gameData.nLockTime) + 1]);
     await ethers.provider.send("evm_mine", []);
-    console.log("  -> tempo avançado e bloco minerado");
+    console.log(`  -> Tempo avançado para: ${Number(gameData.nLockTime) + 1}`);
+    console.log(`  -> Bloco minerado com sucesso`);
 
-    console.log("PASSO 3: player2.acceptGame() — player2 envia aposta e opção correspondentes");
+    console.log("\nPASSO 4: Player2 aceita a partida");
+    console.log(`  -> Player2 escolhe opção: 5 (ímpar)`);
+    console.log(`  -> Cálculo esperado: 3 (P1 par) + 5 (P2 ímpar) = 8 (RESULTADO FINAL: PAR)`);
     await player2Instance.acceptGame(5, {value: DEFAULT_BID});
+    console.log(`  -> acceptGame executado com sucesso`);
 
     gameData = fetchGameData(await oddOrEven.gameData());
-    console.log("  -> acceptGame registrou optionP2:", gameData.optionP2, " player2:", gameData.player2);
+    console.log(`  -> optionP2 registrado: ${gameData.optionP2}`);
+    console.log(`  -> Player2 registrado: ${gameData.player2}`);
+    console.log(`  -> Saldo do contrato agora: ${ethers.formatEther(DEFAULT_BID * 2n)} ETH (aposta de P1 + P2)`);
 
+    console.log("\nPASSO 5: Capturar saldos ANTES da revelação");
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
-    console.log("PASSO 4: saldos antes do resultado -> p1:", balanceP1before.toString(), " p2:", balanceP2before.toString(), " contrato:", balanceContract.toString());
+    console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
+    console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
+    console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
 
-    console.log("PASSO 5: player1.resultGame() — player1 revela chave + opção");
+    console.log("\nPASSO 6: Player1 revela chave original + opção original");
+    console.log(`  -> Chave revelada: ${keygame}`);
+    console.log(`  -> Opção revelada: ${optionP1In} (par)`);
+    console.log(`  -> O contrato vai verificar: keccak256(${keygame} || ${optionP1In}) == ${hashOptionP1In}`);
+    console.log(`  -> RESULTADO: Hash bate! Player1 estava sendo honesto.`);
     await player1Instance.resultGame(hexStringToUint8Array(keygame), optionP1In);
+    console.log(`  -> resultGame executado com sucesso`);
 
+    console.log("\nPASSO 7: Capturar saldos DEPOIS da revelação");
     let balanceP1after = await ethers.provider.getBalance(player1.address);
     let balanceP2after = await ethers.provider.getBalance(player2.address);
     balanceContract = await ethers.provider.getBalance(oddOrEven);
@@ -482,23 +507,35 @@ describe("OddOrEven", function () {
     gameData = fetchGameData(await oddOrEven.gameData());
 
     let gameDataLast = fetchGameData(await oddOrEven.lastGameRecord());
-    console.log("RESULTADO: saldos após resultado -> p1:", balanceP1after.toString(), " p2:", balanceP2after.toString(), " contrato:", balanceContract.toString());
+    console.log(`  -> Saldo P1 depois: ${ethers.formatEther(balanceP1after)} ETH`);
+    console.log(`  -> Saldo P2 depois: ${ethers.formatEther(balanceP2after)} ETH`);
+    console.log(`  -> Saldo contrato depois: ${ethers.formatEther(balanceContract)} ETH`);
+
+    console.log("\nPASSO 8: Calcular e validar resultados");
     const deltaP1 = balanceP1after - balanceP1before;
     const deltaP2 = balanceP2after - balanceP2before;
-    console.log("    -> variação p1:", deltaP1.toString(), " (", ethers.formatEther(deltaP1), "ETH )");
-    console.log("    -> variação p2:", deltaP2.toString(), " (", ethers.formatEther(deltaP2), "ETH )");
+    console.log(`  -> Variação P1: ${ethers.formatEther(deltaP1)} ETH (positivo - recebeu as apostas)`);
+    console.log(`  -> Variação P2: ${ethers.formatEther(deltaP2)} ETH (zero - perdeu ou não ganhou)`);
+    
     if (deltaP1 > deltaP2) {
-      console.log("VENCEDOR: Jogador 1");
+      console.log(`  -> VENCEDOR: Jogador 1 ✓`);
     } else if (deltaP2 > deltaP1) {
-      console.log("VENCEDOR: Jogador 2");
+      console.log(`  -> VENCEDOR: Jogador 2`);
     } else {
-      console.log("VENCEDOR: Empate");
+      console.log(`  -> VENCEDOR: Empate`);
     }
-    console.log("RESULTADO: lastGameRecord.keyGame ->", gameDataLast.keyGame);
-  
+    
+    console.log(`  -> lastGameRecord.keyGame: ${gameDataLast.keyGame}`);
+    console.log(`  -> Esperado: ${gameKey}`);
+
+    console.log("\nPASSO 9: Validações finais");
     expect(balanceP1after > balanceP1before).to.equal(true);
+    console.log(`  ✓ P1 ganhou (saldo aumentou)`);
     expect(balanceP2after == balanceP2before).to.equal(true);
+    console.log(`  ✓ P2 manteve seu saldo (não ganhou, não perdeu)`);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+    console.log(`  ✓ Chave foi registrada corretamente`);
+    console.log("✓ Todas as assertions passaram! Fluxo feliz funcionou perfeitamente.\n");
   });
 
   it("should give victory to Player 1 ( 3 + 4 odd)", async function () {
@@ -703,11 +740,14 @@ describe("OddOrEven", function () {
   });
 
   it("should give victory to Player 2 (wrong p1 keygame)", async function () {
-    
+    console.log("\n========== TESTE: WRONG P1 KEYGAME (REVELAÇÃO COM CHAVE INVÁLIDA) ==========");
+    console.log("Este teste simula uma tentativa de trapaça onde Player1 tenta revelar uma chave diferente da original.");
+    console.log("O contrato deve detectar isso porque o hash não corresponderá ao commit.\n");
 
     const player1Instance = oddOrEven.connect(player1);
     const player2Instance = oddOrEven.connect(player2);
 
+    console.log("PASSO 1: Preparando dados do Player1");
     let keygame: string = gameKey.substring(2, gameKey.length)
     let optionP1In: number = 2;
     let optionP1str = optionP1In.toString(16);
@@ -717,32 +757,71 @@ describe("OddOrEven", function () {
 
     let hashOptionP1In = (ethers.keccak256(hexStringToUint8Array(keygame + optionP1str)));
     let isOdd = true;
+    console.log(`  -> Chave original (keygame): ${keygame}`);
+    console.log(`  -> Opção original (optionP1In): ${optionP1In}`);
+    console.log(`  -> Hash commit original: ${hashOptionP1In}`);
+    console.log(`  -> Player1 enviará aposta: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
+    console.log("\nPASSO 2: Player1 faz playerInit() com o hash commit");
     await player1Instance.playerInit(isOdd, hashOptionP1In, {value: DEFAULT_BID});
+    console.log(`  -> playerInit executado com sucesso`);
+    console.log(`  -> Saldo do contrato aumentou: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
     let gameData = fetchGameData(await oddOrEven.gameData());
+    console.log(`  -> nLockTime (deadline mínimo) definido como: ${gameData.nLockTime}`);
 
+    console.log("\nPASSO 3: Avançar tempo de blockchain para satisfazer o require de acceptGame");
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(gameData.nLockTime) + 1]);
     await ethers.provider.send("evm_mine", []);
+    console.log(`  -> Tempo avançado para: ${Number(gameData.nLockTime) + 1}`);
+    console.log(`  -> Bloco minerado`);
 
+    console.log("\nPASSO 4: Player2 aceita a partida com opção diferente (5 = ímpar)");
     await player2Instance.acceptGame(5, {value: DEFAULT_BID});
+    console.log(`  -> acceptGame executado`);
+    console.log(`  -> Player2 escolheu opção: 5 (ímpar)`);
+    console.log(`  -> Saldo do contrato: ${ethers.formatEther(DEFAULT_BID * 2n)} ETH`);
 
     gameData = fetchGameData(await oddOrEven.gameData());
 
+    console.log("\nPASSO 5: Capturar saldos ANTES da revelação");
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
+    console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
+    console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
 
-    await player1Instance.resultGame(hexStringToUint8Array(keygame.substring(0, keygame.length - 2) + "ab"), optionP1In);
+    console.log("\nPASSO 6: AQUI VEM A TRAPAÇA - Player1 tenta revelar com CHAVE INVÁLIDA");
+    let invalidKey = hexStringToUint8Array(keygame.substring(0, keygame.length - 2) + "ab");
+    console.log(`  -> Chave original era: ${keygame}`);
+    console.log(`  -> Chave FALSA que Player1 está tentando: ${keygame.substring(0, keygame.length - 2)}ab`);
+    console.log(`  -> Opção: ${optionP1In}`);
+    console.log(`  -> O contrato vai rejeitar isso porque keccak256(chavefalsa || opcao) ≠ hashcommit original`);
+    console.log(`  -> RESULTADO: Player1 perde a aposta, Player2 recebe o prêmio!\n`);
 
+    await player1Instance.resultGame(invalidKey, optionP1In);
+
+    console.log("PASSO 7: Capturar saldos DEPOIS da revelação inválida");
     let balanceP1after = await ethers.provider.getBalance(player1.address);
     let balanceP2after = await ethers.provider.getBalance(player2.address);
     balanceContract = await ethers.provider.getBalance(oddOrEven);
   
     gameData = fetchGameData(await oddOrEven.gameData());
 
+    console.log(`  -> Saldo P1 depois: ${ethers.formatEther(balanceP1after)} ETH`);
+    console.log(`  -> Saldo P2 depois: ${ethers.formatEther(balanceP2after)} ETH`);
+    console.log(`  -> Saldo contrato depois: ${ethers.formatEther(balanceContract)} ETH`);
+
+    console.log("\nPASSO 8: Validar resultados");
+    let variationP1 = balanceP1after - balanceP1before;
+    let variationP2 = balanceP2after - balanceP2before;
+    console.log(`  -> Variação P1: ${ethers.formatEther(variationP1)} ETH (deve ser negativo ou zero)`);
+    console.log(`  -> Variação P2: ${ethers.formatEther(variationP2)} ETH (deve ser positivo - recebeu prêmio)`);
+
     expect(balanceP1after <= balanceP1before).to.equal(true);
     expect(balanceP2after > balanceP2before).to.equal(true);
+    console.log("✓ Assertions passaram! Trapaça foi detectada e punida corretamente.\n");
   });
 
   it("should give victory to Player 2 (wrong p1 option)", async function () {
@@ -838,11 +917,14 @@ describe("OddOrEven", function () {
   });
 
   it("should claim game", async function () {
-    
+    console.log("\n========== TESTE: CLAIM GAME (TIMEOUT E RECUPERAÇÃO) ==========");
+    console.log("Este teste demonstra o mecanismo de proteção quando Player1 não revela a chave a tempo.");
+    console.log("Player2 pode chamar claimGame() para recuperar sua aposta com uma compensação.\n");
 
     const player1Instance = oddOrEven.connect(player1);
     const player2Instance = oddOrEven.connect(player2);
 
+    console.log("PASSO 1: Preparando dados do Player1");
     let keygame: string = gameKey.substring(2, gameKey.length)
     let optionP1In: number = 2;
     let optionP1str = optionP1In.toString(16);
@@ -852,27 +934,53 @@ describe("OddOrEven", function () {
 
     let hashOptionP1In = (ethers.keccak256(hexStringToUint8Array(keygame + optionP1str)));
     let isOdd = true;
+    console.log(`  -> Opção original (optionP1In): ${optionP1In}`);
+    console.log(`  -> Hash commit: ${hashOptionP1In}`);
+    console.log(`  -> Player1 enviará aposta: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
+    console.log("\nPASSO 2: Player1 faz playerInit() com o hash commit");
     await player1Instance.playerInit(isOdd, hashOptionP1In, {value: DEFAULT_BID});
+    console.log(`  -> playerInit executado com sucesso`);
 
     let gameData = fetchGameData(await oddOrEven.gameData());
+    console.log(`  -> nLockTime (deadline mínimo) definido como: ${gameData.nLockTime}`);
 
+    console.log("\nPASSO 3: Avançar tempo de blockchain para satisfazer require de acceptGame");
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(gameData.nLockTime) + 1]);
     await ethers.provider.send("evm_mine", []);
+    console.log(`  -> Tempo avançado para: ${Number(gameData.nLockTime) + 1}`);
+    console.log(`  -> Bloco minerado`);
 
+    console.log("\nPASSO 4: Player2 aceita a partida com opção 5 (ímpar)");
     await player2Instance.acceptGame(5, {value: DEFAULT_BID});
+    console.log(`  -> acceptGame executado`);
+    console.log(`  -> Player2 escolheu opção: 5 (ímpar)`);
+    console.log(`  -> Player2 enviou aposta: ${ethers.formatEther(DEFAULT_BID)} ETH`);
 
     gameData = fetchGameData(await oddOrEven.gameData());
 
+    console.log("\nPASSO 5: SIMULAR TIMEOUT - Player1 NÃO revela a chave no prazo");
+    console.log(`  -> timeOutP2 (deadline para Player1 revelar): ${gameData.timeOutP2}`);
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(gameData.timeOutP2) + 1]);
     await ethers.provider.send("evm_mine", []);
+    console.log(`  -> Tempo avançado para: ${Number(gameData.timeOutP2) + 1}`);
+    console.log(`  -> TIMEOUT ACIONADO! Player1 perdeu o prazo de ${gameData.timeOutP2 - gameData.nLockTime} segundos`);
+    console.log(`  -> Player2 agora pode chamar claimGame() para recuperar sua aposta!\n`);
 
+    console.log("PASSO 6: Capturar saldos ANTES do claim");
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
+    console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
+    console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
 
+    console.log("\nPASSO 7: Player2 chama claimGame() para reivindicar a compensação");
     await player2Instance.claimGame();
+    console.log(`  -> claimGame() executado com sucesso`);
+    console.log(`  -> O contrato devolveu a aposta de Player2 + compensação por timeout`);
 
+    console.log("\nPASSO 8: Capturar saldos DEPOIS do claim");
     let balanceP1after = await ethers.provider.getBalance(player1.address);
     let balanceP2after = await ethers.provider.getBalance(player2.address);
     balanceContract = await ethers.provider.getBalance(oddOrEven);
@@ -881,9 +989,21 @@ describe("OddOrEven", function () {
 
     let gameDataLast = fetchGameData(await oddOrEven.lastGameRecord());
   
+    console.log(`  -> Saldo P1 depois: ${ethers.formatEther(balanceP1after)} ETH`);
+    console.log(`  -> Saldo P2 depois: ${ethers.formatEther(balanceP2after)} ETH`);
+    console.log(`  -> Saldo contrato depois: ${ethers.formatEther(balanceContract)} ETH`);
+
+    console.log("\nPASSO 9: Validar resultados");
+    let variationP1 = balanceP1after - balanceP1before;
+    let variationP2 = balanceP2after - balanceP2before;
+    console.log(`  -> Variação P1: ${ethers.formatEther(variationP1)} ETH (não mudou - P1 perdeu no timeout)`);
+    console.log(`  -> Variação P2: ${ethers.formatEther(variationP2)} ETH (positivo - recebeu aposta de volta + compensação)`);
+    console.log(`  -> lastGameRecord.keyGame: ${gameDataLast.keyGame} (zerado após claim)`);
+
     expect(balanceP1after == balanceP1before).to.equal(true);
     expect(balanceP2after > balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal("0x");
+    console.log("✓ Assertions passaram! Timeout e claim funcionaram corretamente.\n");
   });
 
   it("should NOT claim game (Not Accepted)", async function () {

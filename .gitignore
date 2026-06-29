@@ -27,6 +27,9 @@
 # Gas snapshot files
 /.gas-snapshot
 
+# Test run JSON reports
+/test-results
+
 # Snapshot cheatcodes output
 /snapshots
 SCRIPT_NARACAO.md

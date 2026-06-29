@@ -1,0 +1,46 @@
+graph TD
+    A["⏰ TESTE: Claim Game<br/>Timeout e Mecanismo de Proteção"] --> B["📊 Setup Inicial<br/>P1 inicializa mas NÃO revela<br/>P2 aguarda revelação<br/>Timeout acionado"]
+    
+    B --> C["💰 Saldos Iniciais<br/>P1: 9999.8 ETH<br/>P2: 9999.8 ETH<br/>Contrato: 0 ETH"]
+    
+    C --> D["🔐 P1 → playerInit<br/>Envia: hash commit<br/>Aposta: 0.02 ETH"]
+    
+    D --> E["✓ playerInit aceito<br/>Contrato: 0.02 ETH<br/>nLockTime definido"]
+    
+    E --> F["⏰ Avançar Tempo<br/>block.timestamp > nLockTime<br/>Satisfazer require de acceptGame"]
+    
+    F --> G["🎯 P2 → acceptGame<br/>Opção: 5<br/>Aposta: 0.02 ETH"]
+    
+    G --> H["✓ acceptGame aceito<br/>Contrato: 0.04 ETH<br/>Estado: ACCEPTED<br/>timeOutP2 definido"]
+    
+    H --> I["📊 Saldos Pré-Timeout<br/>P1: 9999.78 ETH<br/>P2: 9999.78 ETH<br/>Contrato: 0.04 ETH"]
+    
+    I --> J["🚫 P1 NÃO REVELA<br/>Deixa passar o deadline<br/>block.timestamp passa de timeOutP2"]
+    
+    J --> K["⏰ Avançar Tempo<br/>Simular passagem do timeout<br/>block.timestamp > timeOutP2"]
+    
+    K --> L{"Timeout<br/>Expirou?"}
+    L -->|✓ Sim| M["✓ TIMEOUT ACIONADO<br/>P1 perdeu sua chance de revelar"]
+    L -->|Não| N["Ainda há tempo"]
+    
+    M --> O["🛡️ P2 → claimGame<br/>Executa função de resgate<br/>Recupera aposta + compensação"]
+    
+    O --> P{"Contrato verifica<br/>1. Game ACCEPTED?<br/>2. Timeout passou?<br/>3. P2 é o caller?"}
+    P -->|✓ Tudo OK| Q["✓ Claim válido"]
+    P -->|Falhou| R["❌ Claim rejeitado"]
+    
+    Q --> S["💰 Distribuição<br/>Contrato devolve a P2:<br/>aposta P2 + aposta P1"]
+    
+    S --> T["📊 Saldos Finais<br/>P1: 9999.78 ETH ➡️ sem mudança<br/>P2: 9999.82 ETH ⬆️ +0.04<br/>Contrato: 0 ETH"]
+    
+    T --> U["✅ RESULTADO FINAL<br/>🛡️ Jogador 2 Protegido<br/>✓ Mecanismo de timeout funcionou<br/>✓ P1 foi punido por inação"]
+    
+    N --> V["❌ FIM - Ainda há tempo"]
+    R --> V
+    
+    style A fill:#2196F3,color:#fff
+    style U fill:#2196F3,color:#fff
+    style M fill:#00BCD4,color:#fff
+    style O fill:#00BCD4,color:#fff
+    style K fill:#4DD0E1,color:#000
+    style V fill:#F44336,color:#fff

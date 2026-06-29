@@ -1,0 +1,36 @@
+graph TD
+    A["🚨 TESTE: Wrong P1 KeyGame<br/>Tentativa de Trapaça"] --> B["📊 Setup Inicial<br/>P1 opção: 2<br/>P2 opção: 5<br/>P1 vai tentar TRAPACEAR"]
+    
+    B --> C["💰 Saldos Iniciais<br/>P1: 9999.8 ETH<br/>P2: 9999.8 ETH<br/>Contrato: 0 ETH"]
+    
+    C --> D["🔐 P1 → playerInit<br/>Envia: hash commit<br/>Chave original: abc123xyz<br/>Aposta: 0.02 ETH"]
+    
+    D --> E["✓ playerInit aceito<br/>Contrato: 0.02 ETH<br/>Hash armazenado no contrato"]
+    
+    E --> F["⏰ Avançar Tempo<br/>Satisfazer require de acceptGame"]
+    
+    F --> G["🎯 P2 → acceptGame<br/>Opção: 5<br/>Aposta: 0.02 ETH"]
+    
+    G --> H["✓ acceptGame aceito<br/>Contrato: 0.04 ETH<br/>Estado: ACCEPTED"]
+    
+    H --> I["📊 Saldos Pré-Revelação<br/>P1: 9999.78 ETH<br/>P2: 9999.78 ETH<br/>Contrato: 0.04 ETH"]
+    
+    I --> J["⚠️ P1 TENTA TRAPACEAR<br/>→ resultGame<br/>Revela: chave FALSA (abc123ab)<br/>Revela: opção 2"]
+    
+    J --> K{"Contrato valida<br/>keccak256(FALSA_CHAVE||2)<br/>== hash commit?"}
+    K -->|❌ NÃO| L["❌ FRAUDE DETECTADA!<br/>Hash não corresponde!"]
+    K -->|Sim| M["Seria aceito"]
+    
+    L --> N["⚖️ PUNIÇÃO APLICADA<br/>P1 perde a aposta<br/>P2 recebe o prêmio"]
+    
+    N --> O["💰 Redistribuição de Fundos<br/>Contrato envia:<br/>P2 ← aposta P1 + aposta P2"]
+    
+    O --> P["📊 Saldos Finais<br/>P1: 9999.78 ETH ➡️ sem mudança<br/>P2: 9999.82 ETH ⬆️ +0.04<br/>Contrato: 0 ETH"]
+    
+    P --> Q["✅ RESULTADO FINAL<br/>🏆 Jogador 2 Vencedor por Fraude<br/>✓ Sistema de segurança funcionou!"]
+    
+    style A fill:#FF6F00,color:#fff
+    style Q fill:#FF6F00,color:#fff
+    style L fill:#F44336,color:#fff
+    style N fill:#FF9800,color:#fff
+    style J fill:#FFEB3B,color:#000

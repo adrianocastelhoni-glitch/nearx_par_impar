@@ -1,0 +1,22 @@
+graph TD
+    START["🎮 Jogo Iniciado<br/>P1 faz playerInit<br/>P2 faz acceptGame"] --> TIMEOUT{"P1 Revela<br/>antes do<br/>Timeout?"}
+    
+    TIMEOUT -->|NÃO - Timeout| CLAIM["⏰ TESTE 3<br/>claimGame<br/>P2 reclama aposta<br/>P2 vence por timeout"]
+    
+    TIMEOUT -->|SIM - Revela| VALIDA{"Hash da<br/>Revelação<br/>é válido?"}
+    
+    VALIDA -->|NÃO - Chave Falsa| FRAUD["⚠️ TESTE 2<br/>Wrong KeyGame<br/>Fraude detectada<br/>P2 recebe prêmio"]
+    
+    VALIDA -->|SIM - Chave Correta| CALC["✅ TESTE 1<br/>Give Victory<br/>Calcula resultado<br/>P1 vence por honestidade"]
+    
+    CLAIM --> END["🏁 FIM DO JOGO"]
+    FRAUD --> END
+    CALC --> END
+    
+    style START fill:#9C27B0,color:#fff
+    style TIMEOUT fill:#FF9800,color:#fff
+    style VALIDA fill:#FF9800,color:#fff
+    style CLAIM fill:#2196F3,color:#fff
+    style FRAUD fill:#FF6F00,color:#fff
+    style CALC fill:#4CAF50,color:#fff
+    style END fill:#000,color:#fff

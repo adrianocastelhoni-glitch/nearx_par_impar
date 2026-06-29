@@ -1,5 +1,12 @@
 import { expect } from "chai";
 import { network } from "hardhat";
+import {
+  beginTest,
+  finalizeTest,
+  initTestRun,
+  recordGameOutcome,
+  writeRunReport,
+} from "./helpers/testReporter.js";
 
 const { ethers } = await network.create("hardhat");
 
@@ -51,7 +58,23 @@ describe("OddOrEven", function () {
   let player1: any;
   let player2: any;
 
-  beforeEach(async () => {
+  before(function () {
+    initTestRun({ network: "hardhat" });
+  });
+
+  afterEach(function () {
+    finalizeTest(this);
+  });
+
+  after(function () {
+    const reportPath = writeRunReport();
+    if (reportPath) {
+      console.log(`\nRelatório JSON gravado em: ${reportPath}\n`);
+    }
+  });
+
+  beforeEach(async function () {
+    beginTest(this.currentTest?.title ?? "unknown");
 
     [owner, player1, player2] = await ethers.getSigners();
 
@@ -487,6 +510,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
     console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
     console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
@@ -536,6 +560,33 @@ describe("OddOrEven", function () {
     expect(gameDataLast.keyGame).to.equal(gameKey);
     console.log(`  ✓ Chave foi registrada corretamente`);
     console.log("✓ Todas as assertions passaram! Fluxo feliz funcionou perfeitamente.\n");
+
+    recordGameOutcome({
+      scenario: "happy_path",
+      description: "Fluxo feliz completo: P1 revela chave e opção corretas",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+      steps: [
+        { step: 1, label: "Preparar commit", action: "prepare", data: { optionP1: optionP1In, isOdd } },
+        { step: 2, label: "Player1 inicia partida", action: "playerInit" },
+        { step: 3, label: "Avançar block.timestamp", action: "evm_mine" },
+        { step: 4, label: "Player2 aceita", action: "acceptGame", data: { optionP2: 5 } },
+        { step: 5, label: "Capturar saldos antes da revelação", action: "snapshot" },
+        { step: 6, label: "Player1 revela resultado", action: "resultGame" },
+        { step: 7, label: "Validar vencedor e lastGameRecord", action: "assert" },
+      ],
+    });
   });
 
   it("should give victory to Player 1 ( 3 + 4 odd)", async function () {
@@ -574,6 +625,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log("PASSO 4: saldos antes do resultado -> p1:", balanceP1before.toString(), " p2:", balanceP2before.toString(), " contrato:", balanceContract.toString());
 
     console.log("PASSO 5: player1.resultGame() — player1 revela chave + opção");
@@ -603,6 +655,24 @@ describe("OddOrEven", function () {
     expect(balanceP1after > balanceP1before).to.equal(true);
     expect(balanceP2after == balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+
+    recordGameOutcome({
+      scenario: "happy_path",
+      description: "P1 vence com soma ímpar (3 + 4)",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 4,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+    });
   });
 
   it("should give victory to Player 1 ( 2 + 4 even)", async function () {
@@ -641,6 +711,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log("PASSO 4: saldos antes do resultado -> p1:", balanceP1before.toString(), " p2:", balanceP2before.toString(), " contrato:", balanceContract.toString());
 
     console.log("PASSO 5: player1.resultGame() — player1 revela chave + opção");
@@ -670,6 +741,24 @@ describe("OddOrEven", function () {
     expect(balanceP1after > balanceP1before).to.equal(true);
     expect(balanceP2after == balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+
+    recordGameOutcome({
+      scenario: "happy_path",
+      description: "P1 vence com soma par (2 + 4)",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 4,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+    });
   });
 
   it("should give victory to Player 1 ( 2 + 5 odd)", async function () {
@@ -708,6 +797,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log("PASSO 4: saldos antes do resultado -> p1:", balanceP1before.toString(), " p2:", balanceP2before.toString(), " contrato:", balanceContract.toString());
 
     console.log("PASSO 5: player1.resultGame() — player1 revela chave + opção");
@@ -737,6 +827,24 @@ describe("OddOrEven", function () {
     expect(balanceP1after > balanceP1before).to.equal(true);
     expect(balanceP2after == balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+
+    recordGameOutcome({
+      scenario: "happy_path",
+      description: "P1 vence com soma ímpar (2 + 5)",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+    });
   });
 
   it("should give victory to Player 2 (wrong p1 keygame)", async function () {
@@ -788,6 +896,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
     console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
     console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
@@ -822,6 +931,26 @@ describe("OddOrEven", function () {
     expect(balanceP1after <= balanceP1before).to.equal(true);
     expect(balanceP2after > balanceP2before).to.equal(true);
     console.log("✓ Assertions passaram! Trapaça foi detectada e punida corretamente.\n");
+
+    const revealedKeyGame = `${keygame.substring(0, keygame.length - 2)}ab`;
+    recordGameOutcome({
+      scenario: "fraud_wrong_key",
+      description: "P1 revela chave inválida; P2 vence",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      revealedKeyGame,
+      fraudDetected: true,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+    });
   });
 
   it("should give victory to Player 2 (wrong p1 option)", async function () {
@@ -854,6 +983,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
 
     await player1Instance.resultGame(hexStringToUint8Array(keygame), optionP1In - 1);
 
@@ -868,6 +998,25 @@ describe("OddOrEven", function () {
     expect(balanceP1after <= balanceP1before).to.equal(true);
     expect(balanceP2after > balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+
+    recordGameOutcome({
+      scenario: "fraud_wrong_option",
+      description: "P1 revela opção errada; P2 vence",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In - 1,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      fraudDetected: true,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+    });
   });
 
   it("should give victory to Player 2 (negative p1 option)", async function () {
@@ -900,6 +1049,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
 
     await player1Instance.resultGame(hexStringToUint8Array(keygame), optionP1In);
 
@@ -914,6 +1064,25 @@ describe("OddOrEven", function () {
     expect(balanceP1after <= balanceP1before).to.equal(true);
     expect(balanceP2after > balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal(gameKey);
+
+    recordGameOutcome({
+      scenario: "fraud_negative_option",
+      description: "P1 revela opção negativa; P2 vence",
+      resolution: "resultGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      fraudDetected: true,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+    });
   });
 
   it("should claim game", async function () {
@@ -971,6 +1140,7 @@ describe("OddOrEven", function () {
     let balanceP1before = await ethers.provider.getBalance(player1.address);
     let balanceP2before = await ethers.provider.getBalance(player2.address);
     let balanceContract = await ethers.provider.getBalance(oddOrEven);
+    const balanceContractBefore = balanceContract;
     console.log(`  -> Saldo P1 antes: ${ethers.formatEther(balanceP1before)} ETH`);
     console.log(`  -> Saldo P2 antes: ${ethers.formatEther(balanceP2before)} ETH`);
     console.log(`  -> Saldo contrato antes: ${ethers.formatEther(balanceContract)} ETH`);
@@ -1004,6 +1174,30 @@ describe("OddOrEven", function () {
     expect(balanceP2after > balanceP2before).to.equal(true);
     expect(gameDataLast.keyGame).to.equal("0x");
     console.log("✓ Assertions passaram! Timeout e claim funcionaram corretamente.\n");
+
+    recordGameOutcome({
+      scenario: "timeout_claim",
+      description: "P1 não revela a tempo; P2 reivindica via claimGame",
+      resolution: "claimGame",
+      isOdd,
+      optionP1: optionP1In,
+      optionP2: 5,
+      hashOptionP1: hashOptionP1In,
+      keyGame: keygame,
+      balanceP1before,
+      balanceP2before,
+      balanceContractBefore,
+      balanceP1after,
+      balanceP2after,
+      balanceContractAfter: balanceContract,
+      lastGameRecord: gameDataLast,
+      steps: [
+        { step: 1, label: "Player1 inicia partida", action: "playerInit" },
+        { step: 2, label: "Player2 aceita", action: "acceptGame", data: { optionP2: 5 } },
+        { step: 3, label: "Simular timeout de P1", action: "evm_setNextBlockTimestamp" },
+        { step: 4, label: "Player2 reivindica prêmio", action: "claimGame" },
+      ],
+    });
   });
 
   it("should NOT claim game (Not Accepted)", async function () {

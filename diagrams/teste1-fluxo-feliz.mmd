@@ -1,0 +1,45 @@
+graph TD
+    A["🎮 TESTE: Give Victory to Player 1<br/>Fluxo Feliz Completo"] --> B["📊 Setup Inicial<br/>P1 opção: 3 par<br/>P2 opção: 5 ímpar<br/>Resultado esperado: 3+5=8 PAR"]
+    
+    B --> C["💰 Saldos Iniciais<br/>P1: 9999.8 ETH<br/>P2: 9999.8 ETH<br/>Contrato: 0 ETH"]
+    
+    C --> D["🔐 P1 → playerInit<br/>Envia: hash commit<br/>Aposta: 0.02 ETH"]
+    
+    D --> E{"Contrato verifica<br/>block.timestamp<br/>≤ nLockTime?"}
+    E -->|Sim| F["✓ playerInit aceito<br/>Contrato: 0.02 ETH"]
+    E -->|Não| X["❌ Revert"]
+    
+    F --> G["⏰ Avançar Tempo<br/>block.timestamp > nLockTime<br/>Minar bloco"]
+    
+    G --> H["🎯 P2 → acceptGame<br/>Opção: 5 ímpar<br/>Aposta: 0.02 ETH"]
+    
+    H --> I["✓ acceptGame aceito<br/>Contrato: 0.04 ETH<br/>Estado: ACCEPTED"]
+    
+    I --> J["📊 Saldos Pré-Revelação<br/>P1: 9999.78 ETH<br/>P2: 9999.78 ETH<br/>Contrato: 0.04 ETH"]
+    
+    J --> K["🔑 P1 → resultGame<br/>Revela: chave original<br/>Revela: opção 3 par"]
+    
+    K --> L{"Contrato valida<br/>keccak256(chave||opção)<br/>== hash commit?"}
+    L -->|✓ Sim| M["✓ Chave válida!<br/>P1 era honesto"]
+    L -->|❌ Não| Z["❌ Revert: Chave inválida"]
+    
+    M --> N{"Calcula resultado<br/>3 + 5 = 8<br/>8 é PAR?"}
+    N -->|✓ Sim| O["✓ P1 VENCEU!<br/>Recebe: aposta P1 + aposta P2"]
+    N -->|❌ Não| P["P2 venceria"]
+    
+    O --> Q["💰 Distribuição de Prêmios<br/>P1 +0.04 ETH (prêmio)"]
+    
+    Q --> R["📊 Saldos Finais<br/>P1: 9999.82 ETH ⬆️ +0.04<br/>P2: 9999.78 ETH ➡️ sem mudança<br/>Contrato: 0 ETH"]
+    
+    R --> S["✅ RESULTADO FINAL<br/>🏆 Jogador 1 Vencedor<br/>✓ Fluxo feliz funcionou"]
+    
+    X --> T["❌ FIM - ERRO"]
+    Z --> T
+    
+    style A fill:#4CAF50,color:#fff
+    style S fill:#4CAF50,color:#fff
+    style M fill:#8BC34A,color:#fff
+    style O fill:#8BC34A,color:#fff
+    style X fill:#F44336,color:#fff
+    style Z fill:#F44336,color:#fff
+    style T fill:#F44336,color:#fff
